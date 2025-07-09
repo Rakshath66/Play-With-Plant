@@ -40,7 +40,6 @@ uploaded_file = st.camera_input("📸 Capture Emotion")
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Your image from video", use_container_width=True)
 
     inputs = processor(images=image, return_tensors="pt")
     with torch.no_grad():
@@ -52,3 +51,4 @@ if uploaded_file is not None:
     mood = mood_map.get(raw_emotion, "Neutral")
     # st.subheader(f"🧠 Detected Emotion: {raw_emotion.capitalize()}")
     st.image(plant_images[mood], caption=f"🌿 Plant feels: {mood}", width=300)
+    st.image(image, caption="Your image from video", use_container_width=True)
