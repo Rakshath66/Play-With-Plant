@@ -6,7 +6,7 @@ from transformers import AutoImageProcessor, AutoModelForImageClassification
 # --- Page Setup ---
 st.set_page_config(page_title="🌱 AI Mood Plant", layout="centered")
 st.title("🌱 AI Mood Plant")
-st.markdown("📸 Click the selfie button, then see how your plant feels!")
+st.markdown("📸 Click the button to capture emotion, then see how your plant feels!")
 
 # --- Load Pretrained FER Model ---
 @st.cache_resource
@@ -40,7 +40,7 @@ uploaded_file = st.camera_input("📸 Take a selfie")
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Your Selfie", use_column_width=True)
+    st.image(image, caption="Your image from video", use_container_width=True)
 
     inputs = processor(images=image, return_tensors="pt")
     with torch.no_grad():
@@ -50,5 +50,5 @@ if uploaded_file is not None:
         raw_emotion = model.config.id2label[label_id].lower()
 
     mood = mood_map.get(raw_emotion, "Neutral")
-    st.subheader(f"🧠 Detected Emotion: {raw_emotion.capitalize()}")
+    # st.subheader(f"🧠 Detected Emotion: {raw_emotion.capitalize()}")
     st.image(plant_images[mood], caption=f"🌿 Plant feels: {mood}", width=300)
