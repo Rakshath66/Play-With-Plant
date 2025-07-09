@@ -2,9 +2,6 @@ import streamlit as st
 from PIL import Image
 import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification
-import cv2
-import tempfile
-import os
 
 # --- Page Setup ---
 st.set_page_config(page_title="🌱 AI Mood Plant", layout="centered")
