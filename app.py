@@ -1,110 +1,57 @@
 import streamlit as st
-import tensorflow as tf
-import numpy as np
-import cv2
-import av
-import threading
-import time
 from PIL import Image
-from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
-from keras.layers import TFSMLayer
+import torch
+from transformers import AutoImageProcessor, AutoModelForImageClassification
+import cv2
+import tempfile
+import os
 
+# --- Page Setup ---
+st.set_page_config(page_title="🌱 AI Mood Plant", layout="centered")
+st.title("🌱 AI Mood Plant")
+st.markdown("📸 Click the selfie button, then see how your plant feels!")
 
-# ✅ Load model
-model = TFSMLayer("converted_savedmodel/model.savedmodel", call_endpoint="serving_default")
-with open("converted_savedmodel/labels.txt", "r") as f:
-    class_names = [line.strip() for line in f.readlines()]
+# --- Load Pretrained FER Model ---
+@st.cache_resource
+def load_emotion_model():
+    processor = AutoImageProcessor.from_pretrained("trpakov/vit-face-expression")
+    model = AutoModelForImageClassification.from_pretrained("trpakov/vit-face-expression")
+    return processor, model
 
+processor, model = load_emotion_model()
+
+# --- Map raw emotions to 3 moods ---
+mood_map = {
+    "happy": "Happy",
+    "neutral": "Neutral",
+    "sad": "Sad",
+    "angry": "Sad",
+    "disgust": "Sad",
+    "fear": "Sad",
+    "surprise": "Happy"
+}
+
+# --- Plant images path ---
 plant_images = {
     "Happy": "plants/happy.jpg",
     "Neutral": "plants/neutral.jpg",
     "Sad": "plants/sad.jpg"
 }
 
-# ✅ Global mood
-global_mood = {"value": "Neutral"}
-lock = threading.Lock()
+# --- Capture Selfie & Run Emotion Detection ---
+uploaded_file = st.camera_input("📸 Take a selfie")
 
-# ✅ Prediction logic
-def predict_emotion(image_np):
-    try:
-        normalized = (image_np / 127.5) - 1.0
-        data = np.expand_dims(normalized, axis=0).astype(np.float32)
+if uploaded_file is not None:
+    image = Image.open(uploaded_file).convert("RGB")
+    st.image(image, caption="Your Selfie", use_column_width=True)
 
-        output = model(data)
-        if isinstance(output, dict):
-            prediction = next(iter(output.values()))
-        else:
-            prediction = output
+    inputs = processor(images=image, return_tensors="pt")
+    with torch.no_grad():
+        outputs = model(**inputs)
+        probs = torch.nn.functional.softmax(outputs.logits, dim=1)
+        label_id = torch.argmax(probs, dim=1).item()
+        raw_emotion = model.config.id2label[label_id].lower()
 
-        if hasattr(prediction, "numpy"):
-            prediction = prediction.numpy()
-
-        print("Prediction values:", prediction)
-        print("Predicted mood:", mood)
-
-        index = np.argmax(prediction)
-        mood = class_names[index]
-
-
-        with lock:
-            global_mood["value"] = mood
-    except Exception as e:
-        print("Prediction error:", e)
-
-# ✅ Video processor
-class EmotionDetector(VideoProcessorBase):
-    def recv(self, frame):
-        img = frame.to_ndarray(format="bgr24")
-        img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img_resized = Image.fromarray(img_rgb).resize((224, 224))
-        image_array = np.asarray(img_resized).astype(np.float32)
-
-        threading.Thread(target=predict_emotion, args=(image_array,), daemon=True).start()
-
-        with lock:
-            mood = global_mood["value"]
-        cv2.putText(img, f"Mood: {mood}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 255, 0), 2)
-        return av.VideoFrame.from_ndarray(img, format="bgr24")
-
-# ✅ Streamlit UI
-st.set_page_config(page_title="🌱 AI Mood Plant", layout="centered")
-st.title("🌱 AI Mood Plant")
-st.markdown("Let your smile grow a plant! Your mood powers the plant's growth 🌿")
-
-# ✅ Start webcam
-ctx = webrtc_streamer(
-    key="mood-stream",
-    video_processor_factory=EmotionDetector,
-    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]},
-    media_stream_constraints={"video": True, "audio": False}
-)
-
-# ✅ Mood plant section
-import time
-
-st.subheader("🪴 Your Plant's Mood")
-
-# ⏳ Create placeholder
-plant_placeholder = st.empty()
-
-# 💾 Track last displayed mood
-if "last_mood" not in st.session_state:
-    st.session_state.last_mood = None
-
-# 🔁 Loop only if camera is active
-if ctx and ctx.state.playing:
-    while True:
-        with lock:
-            current_mood = global_mood["value"]
-            st.text(f"DEBUG: Current mood = {current_mood}")
-
-
-        # Only update if mood changed
-        if current_mood != st.session_state.last_mood:
-            st.session_state.last_mood = current_mood
-            plant_img = Image.open(plant_images[current_mood])
-            plant_placeholder.image(plant_img, width=300, caption=f"The plant feels: {current_mood}")
-
-        time.sleep(1)
-
+    mood = mood_map.get(raw_emotion, "Neutral")
+    st.subheader(f"🧠 Detected Emotion: {raw_emotion.capitalize()}")
+    st.image(plant_images[mood], caption=f"🌿 Plant feels: {mood}", width=300)
