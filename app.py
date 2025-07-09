@@ -36,7 +36,7 @@ plant_images = {
 }
 
 # --- Capture Selfie & Run Emotion Detection ---
-uploaded_file = st.camera_input("📸 Take a selfie")
+uploaded_file = st.camera_input("📸 Capture Emotion")
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file).convert("RGB")
