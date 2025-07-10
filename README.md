@@ -10,7 +10,7 @@ A playful and emotionally intelligent **plant companion** that reacts to your fa
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/rakshath66/play-with-plant?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/rakshath66/play-with-plant?style=social)
-![MIT License](https://img.shieHlds.io/github/license/rakshath66/play-with-plant)
+![MIT License](https://img.shields.io/github/license/rakshath66/play-with-plant)
 
 ---
 
