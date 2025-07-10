@@ -16,7 +16,7 @@ A playful and emotionally intelligent **plant companion** that reacts to your fa
 
 ## 🌿 Preview
 
-![image](images/ui-preview.png)
+![image](images/ui.png)
 
 ---
 
