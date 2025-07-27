@@ -1,7 +1,3 @@
-Here's your `README.md` for the **🌱 AI Mood Plant** project — following the same format and tone as your CLIP project:
-
----
-
 # 🌱 AI Mood Plant — Emotion-Aware Interactive App
 
 A playful and emotionally intelligent **plant companion** that reacts to your facial expression. Powered by facial emotion recognition and Streamlit UI — just click, capture, and watch the plant react in real time!
